@@ -11,9 +11,17 @@ def fix_m4s(m4s_path: str, mp4_path: str, bufsize: int = 256 * 1024 * 1024) -> N
     assert bufsize > 0
     with open(m4s_path, "rb") as target_file:
         header = target_file.read(32)
+
+        # 核心：文件头修正
         new_header = header.replace(b"000000000", b"")
         new_header = new_header.replace(b"$", b" ")
-        new_header = new_header.replace(b"avc1", b"")
+        if new_header.find(b"avc1") > 0:
+            new_header = new_header.replace(b"avc1", b"")
+        elif new_header.find(b"isomiso") > 0:
+            new_header = new_header.replace(b"isomiso", b"iso")
+        else:
+            raise Exception("新的 m4s 头，不会解析!")
+
         with open(mp4_path, "wb") as output_file:
             output_file.write(new_header)
             i = target_file.read(bufsize)
